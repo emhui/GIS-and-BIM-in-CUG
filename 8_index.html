@@ -21,14 +21,15 @@
         }
 
         #panel {
-            width: 400px;
-            height: 100px;
+            width: 345px;
+            /* height: 100px; */
             margin: 4px auto;
-            position: fixed;
             right: 100px;
             top: 100px;
-            background: #ffffff;
-            border-color: #0000ff;
+            background: white;
+            border-color: black;
+            border-width: 2px;
+            padding: 20px;
         }
     </style>
     <!--使用easyui-->
@@ -85,16 +86,16 @@
                     container: "viewDiv",
                     map: webscene
                 });
-                // view.navigation.gamepad.enabled = true;
 
-                // 创建控件
+                // 以下步骤是创建一系列控件
                 var search = new Search({ view: view }); // 搜索
 
-                //  添加home控件
-                view.ui.add(new Home({ view: view }), "top-left");
-                // 添加坐标控件
-                view.ui.add(new CoordinateConversion({ view: view }), "bottom-right");
-                var layerList = new LayerList({ view: view }); // 图层列表
+                view.ui.add(new Home({ view: view }), "top-left");//  添加home控件到左上角
+
+                // view.ui.add(new CoordinateConversion({ view: view }), "bottom-right");// 添加坐标控件
+
+                var layerList = new LayerList({ view: view }); // 图层列表控件
+                // 底图控件
                 var basemapGallery = new BasemapGallery({
                     view: view, // 绑定当前view
                     source: { // 设置ArcGis Online 源数据
@@ -104,14 +105,14 @@
                         }
                     }
                 });
+                // 编辑控件
                 var sketch = new Sketch({
                     view: view,
                     layer: graphicsLayer
                 });
-
-                var directLineMeasurement3D = new DirectLineMeasurement3D({ view: view });
-                var areaMeasurement3D = new AreaMeasurement3D({ view: view });
-                var slice = new Slice({ view: view });
+                var directLineMeasurement3D = new DirectLineMeasurement3D({ view: view }); // 测量长度
+                var areaMeasurement3D = new AreaMeasurement3D({ view: view }); // 测量面积
+                var slice = new Slice({ view: view }); // 剖析控件
                 // 创建一个函数返回各类的插件expand
                 function getExpand(obj, icon) {
                     var expand = new Expand({
@@ -122,6 +123,7 @@
                     });
                     return expand;
                 }
+                // 添加控件到屏幕右上角
                 view.ui.add([
                     getExpand(search, "esri-icon-search"),
                     getExpand(layerList, "esri-icon-layers"),
@@ -135,41 +137,38 @@
                     // getExpand(swipe, "esri-icon-swap"),
                 ], "top-right");
 
+                // 滑动改变光照
                 $('#ss').slider({
-                    mode: 'h',
-                    width: 300,
-                    height: 300,
-                    rule: [0, '|', 9, '|', 12, '|', 15, '|', 20, '|', 24],
-                    min: 0,
-                    max: 24,
-                    value: 12,
-                    showTip: true,
-                    tipFormatter: function (value) {
-                        return value + "点";
-                    },
                     onChange: function (newValue, oldValue) {
                         var date = new Date();
                         date.setHours(newValue);
                         date.setMinutes(0);
-                        setLight(date);
+                        view.environment.lighting.date = date;
                     },
-                    onSlideEnd: function (value) {
-
+                });
+                // 是否打开i阴影
+                $('#btn-light').switchbutton({
+                    onChange: function (checked) {
+                        view.environment.lighting.directShadowsEnabled = checked;
                     }
                 });
-                function setLight(date) {
-                    view.environment = {
-                        lighting: {
-                            // enable shadows for all the objects in a scene
-                            directShadowsEnabled: true,
-                            // set the date and a time of the day for the current camera location
-                            date: date
-                        }
-                    };
-                }
-                // 展示关照
+                // 将控制光照的控件添加到屏幕右下角
+                view.ui.add("panel", "bottom-right");
             });
-
+            // 配置滑动控件
+            $('#ss').slider({
+                mode: 'h',
+                width: 300,
+                height: '100%',
+                rule: [0, '|', 6, '|', 12, '|', 18, '|', 24],
+                min: 0,
+                max: 24,
+                value: 12,
+                showTip: true,
+                tipFormatter: function (value) {
+                    return value + "点";
+                },
+            });
         });
     </script>
 </head>
@@ -178,8 +177,10 @@
     <div id="viewDiv" class="esri-widget">
     </div>
     <div id="panel">
-        关照分析<br>
         <div id="ss" style="height:200px; margin: auto; top: 100px; position: relative;"></div>
+        <div style="margin-top: 40px;">
+            阴影：<input id="btn-light" class="easyui-switchbutton" data-options="onText:'开',offText:'关'">
+        </div>
     </div>
 </body>
 
