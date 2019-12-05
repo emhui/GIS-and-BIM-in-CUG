@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>BuildingSceneLayer with Slice widget - 4.13</title>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        #menu {
+            padding: 0.8em;
+        }
+
+        #panel {
+            width: 400px;
+            height: 100px;
+            margin: 4px auto;
+            position: fixed;
+            right: 100px;
+            top: 100px;
+            background: #ffffff;
+            border-color: #0000ff;
+        }
+    </style>
+    <!--使用easyui-->
+    <link rel="stylesheet" type="text/css" href="easyui/themes/material-blue/easyui.css">
+    <link rel="stylesheet" type="text/css" href="easyui/themes/icon.css">
+    <script type="text/javascript" src="easyui/jquery.min.js"></script>
+    <script type="text/javascript" src="easyui/jquery.easyui.min.js"></script>
+
+    <link href="https://js.arcgis.com/4.13/esri/themes/light/main.css" rel="stylesheet" type="text/css" />
+    <script src="https://js.arcgis.com/4.13/"></script>
+
+    <script>
+        $(function () {
+            require([
+                "esri/WebScene",
+                "esri/views/SceneView",
+                "esri/widgets/Home", // 初始位置
+                "esri/widgets/Expand",
+                "esri/widgets/Search", // 搜索
+                "esri/widgets/LayerList",
+                "esri/widgets/BasemapGallery", // 底图
+                "esri/layers/GraphicsLayer", // 图层
+                "esri/widgets/Sketch", // 编辑
+                "esri/widgets/DirectLineMeasurement3D",
+                "esri/widgets/AreaMeasurement3D",
+                "esri/widgets/Slice",
+                "esri/widgets/CoordinateConversion",
+                "esri/widgets/Swipe",
+            ], function (
+                WebScene,
+                SceneView,
+                Home,
+                Expand,
+                Search,
+                LayerList,
+                BasemapGallery,
+                GraphicsLayer,
+                Sketch,
+                DirectLineMeasurement3D,
+                AreaMeasurement3D,
+                Slice,
+                CoordinateConversion,
+                Swipe,
+            ) {
+                var graphicsLayer = new GraphicsLayer();
+                const webscene = new WebScene({
+                    portalItem: {
+                        id: "612df93de160457e8ecc83b06ecb8cd7"
+                    },
+                    layers: [graphicsLayer]
+                });
+
+                const view = new SceneView({
+                    container: "viewDiv",
+                    map: webscene
+                });
+                // view.navigation.gamepad.enabled = true;
+
+                // 创建控件
+                var search = new Search({ view: view }); // 搜索
+
+                //  添加home控件
+                view.ui.add(new Home({ view: view }), "top-left");
+                // 添加坐标控件
+                view.ui.add(new CoordinateConversion({ view: view }), "bottom-right");
+                var layerList = new LayerList({ view: view }); // 图层列表
+                var basemapGallery = new BasemapGallery({
+                    view: view, // 绑定当前view
+                    source: { // 设置ArcGis Online 源数据
+                        portal: {
+                            url: "https://www.arcgis.com",
+                            useVectorBasemaps: false // 是否选择矢量basemap，false则不选,选择false则会加载更快的basemap
+                        }
+                    }
+                });
+                var sketch = new Sketch({
+                    view: view,
+                    layer: graphicsLayer
+                });
+
+                var directLineMeasurement3D = new DirectLineMeasurement3D({ view: view });
+                var areaMeasurement3D = new AreaMeasurement3D({ view: view });
+                var slice = new Slice({ view: view });
+                // 创建一个函数返回各类的插件expand
+                function getExpand(obj, icon) {
+                    var expand = new Expand({
+                        view: view,
+                        expandIconClass: icon,
+                        content: obj,
+                        group: "top-right"
+                    });
+                    return expand;
+                }
+                view.ui.add([
+                    getExpand(search, "esri-icon-search"),
+                    getExpand(layerList, "esri-icon-layers"),
+                    getExpand(basemapGallery, "esri-icon-basemap"),
+                    getExpand(sketch, "esri-icon-edit"),
+                    getExpand(directLineMeasurement3D, "esri-icon-measure-line"),
+                    getExpand(areaMeasurement3D, "esri-icon-measure-area"),
+                    getExpand(slice, "esri-icon-swap"),
+                    // getExpand(eidt, "esri-icon-edit"), sceneview不支持edit
+                    // getExpand(swipe, "esri-icon-swap"),
+                    // getExpand(swipe, "esri-icon-swap"),
+                ], "top-right");
+
+                $('#ss').slider({
+                    mode: 'h',
+                    width: 300,
+                    height: 300,
+                    rule: [0, '|', 9, '|', 12, '|', 15, '|', 20, '|', 24],
+                    min: 0,
+                    max: 24,
+                    value: 12,
+                    showTip: true,
+                    tipFormatter: function (value) {
+                        return value + "点";
+                    },
+                    onChange: function (newValue, oldValue) {
+                        var date = new Date();
+                        date.setHours(newValue);
+                        date.setMinutes(0);
+                        setLight(date);
+                    },
+                    onSlideEnd: function (value) {
+
+                    }
+                });
+                function setLight(date) {
+                    view.environment = {
+                        lighting: {
+                            // enable shadows for all the objects in a scene
+                            directShadowsEnabled: true,
+                            // set the date and a time of the day for the current camera location
+                            date: date
+                        }
+                    };
+                }
+                // 展示关照
+            });
+
+        });
+    </script>
+</head>
+
+<body>
+    <div id="viewDiv" class="esri-widget">
+    </div>
+    <div id="panel">
+        关照分析<br>
+        <div id="ss" style="height:200px; margin: auto; top: 100px; position: relative;"></div>
+    </div>
+</body>
+
+</html>
